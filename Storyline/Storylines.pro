@@ -1,8 +1,10 @@
-#-------------------------------------------------
+#----------------------------------------------------------------------------------
 #
 # Project created by QtCreator 2012-12-16T12:43:17
+# Rewritten with C++ by Yeseul Park from the original source of
+# http://vis.cs.ucdavis.edu/~tanahashi/data_downloads/storyline_visualizations/
 #
-#-------------------------------------------------
+#----------------------------------------------------------------------------------
 
 QT       += core gui opengl
 
