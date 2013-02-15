@@ -62,16 +62,23 @@ QString Character::getName()
 {
     return name;
 }
-void Character::setColor()
+void Character::setColor(QList<float> *_color)
 {
-    //int hashCode = qHash(name);
-    red = (float)rand() / (float)RAND_MAX;
-    green = (float)rand() / (float)RAND_MAX;
-    blue = (float)rand() / (float)RAND_MAX;
-    color = new QList<float>();
-    color->append(red);
-    color->append(green);
-    color->append(blue);
+    if (_color == NULL) {
+        //int hashCode = qHash(name);
+        red = (float)rand() / (float)RAND_MAX;
+        green = (float)rand() / (float)RAND_MAX;
+        blue = (float)rand() / (float)RAND_MAX;
+        QList<float> *tmpColor = new QList<float>();
+        tmpColor->append(red);
+        tmpColor->append(green);
+        tmpColor->append(blue);
+        color = tmpColor;
+    }
+    else {
+        color = _color;
+    }
+
 }
 
 QList<float> *Character::getColor()

@@ -8,6 +8,7 @@ SessionLayout::SessionLayout(int slot_number, InteractionSession *interaction_se
         QString member = interaction_session->getMembers().at(i);
         layout->insert(member, -1);
     }
+
     static_lines = new QSet<QString>();
     rising_lines = new QSet<QString>();
     dropping_lines = new QSet<QString>();

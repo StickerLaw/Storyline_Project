@@ -19,7 +19,7 @@ public:
     void setName(QString name);
     int getID();
     QString getName();
-    void setColor();
+    void setColor(QList<float> *_color);
     QList<float> *getColor();
 
 private:
@@ -33,5 +33,8 @@ private:
     QList<float> *color;
     float red, green, blue;
 };
-
+inline bool operator==(Character &ch1, Character &ch2)
+{
+    return ch1.getName() == ch2.getName();
+}
 #endif // CHARACTER_H

@@ -25,6 +25,7 @@ private:
     QString membersOneStr;
     int starttime, endtime;
     int location;
+    QList<float> *color;
 
 };
 inline bool operator==(InteractionSession &is, InteractionSession &is2)

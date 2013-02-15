@@ -22,6 +22,7 @@ int InteractionSession::getID()
 {
     return id;
 }
+
 QStringList InteractionSession::getMembers()
 {
     return members;
@@ -53,7 +54,7 @@ void InteractionSession::extend(int _endtime)
 
 void InteractionSession::printIS()
 {
-    qDebug() << "is id: " << getID() << " members: " << getMembersOneStr() << " starttime: " << starttime << " endtime: " << endtime << " location: " << location;
+    qDebug() << "\tIS id: " << getID() << " members: " << getMembersOneStr() << " starttime: " << starttime << " endtime: " << endtime << " location: " << location;
 }
 
 

@@ -1,27 +1,27 @@
 #include "global_functions.h"
 
 
-QList<QList<int>* > *populateGenomes(int population, int slots_count, int genome_length)
-{
+//QList<QList<int>* > *populateGenomes(int population, int slots_count, int genome_length)
+//{
 
-    QTime time = QTime::currentTime();
-    qsrand((uint)time.msec());
-    QList<QList<int> *> *genome_pool = new QList<QList<int>*>();
+//    QTime time = QTime::currentTime();
+//    qsrand((uint)time.msec());
+//    QList<QList<int> *> *genome_pool = new QList<QList<int>*>();
 
-    for (int i = 0; i < population; i++)
-    {
+//    for (int i = 0; i < population; i++)
+//    {
 
-        QList<int> *genome = new QList<int>();
-        for (int j = 0; j < genome_length; j++)
-        {
-            int random_int = qrand() % slots_count;
-            genome->append(random_int);
-        }
-        genome_pool->append(genome);
-    }
+//        QList<int> *genome = new QList<int>();
+//        for (int j = 0; j < genome_length; j++)
+//        {
+//            int random_int = qrand() % slots_count;
+//            genome->append(random_int);
+//        }
+//        genome_pool->append(genome);
+//    }
 
-    return genome_pool;
-}
+//    return genome_pool;
+//}
 
 SlotBaseLayout* decodeGenome(QList<int>* genome, QList<InteractionSession*> *interaction_sessions)
 {
@@ -161,6 +161,11 @@ bool startTimeLessThen_reversed(InteractionSession *is1, InteractionSession *is2
 bool startTimeLessThen(InteractionSession *is1, InteractionSession *is2)
 {
     return is1->getStartTime() < is2->getStartTime();
+}
+/*Sorting function for fittness in acsending order*/
+bool fittnessLessThen2(QPair<QHash<QString, QHash<int, int>*>*, int>* i1, QPair<QHash<QString, QHash<int, int>*>*, int>* i2)
+{
+    return i1->second < i2->second;
 }
 /*Check all line segments are classified*/
 bool checkAllLinsegmentsAreClassified(SlotBaseLayout *slot_base_layout)
@@ -335,7 +340,7 @@ void assignMemberAlignment(SlotBaseLayout *slot_base_layout)
                 }
             }
 
-            assert(best_layout->size() == static_lines->size());
+            //assert(best_layout->size() == static_lines->size());
 
             if (!best_layout->isEmpty()) {
                 QHash<QString, int>::iterator i = best_layout->begin();
@@ -567,15 +572,16 @@ SlotSegments* generateSlotSegments(SlotBaseLayout *slot_base_layout)
                     SessionLayout *session_layout = sessions_layout->value(interaction_session);
                     assert(session_layout != NULL);
                     QList<InteractionSession*> *proceeding_interaction_sessions = interaction_session->proceeding_interaction_sessions;
-
+                    qDebug() << "IS:" << interaction_session->getMembersOneStr();
                     for (int k = 0; k < proceeding_interaction_sessions->size(); k++)
                     {
+
                         InteractionSession *proceeding_interaction_session = proceeding_interaction_sessions->at(k);
                         QList<QString> common_members;
                         QSet<QString> ms = members.toSet();
                         QSet<QString> pms = proceeding_interaction_session->getMembers().toSet();
                         common_members = pms.intersect(ms).toList();
-
+                        qDebug() << "PIS:" << proceeding_interaction_session->getMembersOneStr();
                         if (common_members.size() > 0) {
                             /*These interaction sessions are connected*/
                             SlotSegment *proceeding_IS_slot_segment = slot_segments->belongToSlotSegment(proceeding_interaction_session, slot_idx);
@@ -640,13 +646,14 @@ void adjustSlotSegments(SlotSegments* slot_segments, QList<SlotLayout*>* slot_la
                 int time_step = it.key();
                 int bottom_val = it.value();
                 int top_val = top_coords->value(time_step);
+
                 int height = top_val - bottom_val;
                 slot_layouts->at(center_slot_idx)->setItem(time_step, bottom_val, height);
             }
         }
 
     }
-
+    //qDebug() << "center done";
     /*Set the layout for the slots above center slot
     **Shift each slots down toward the center slot one by one.
     */
@@ -666,6 +673,7 @@ void adjustSlotSegments(SlotSegments* slot_segments, QList<SlotLayout*>* slot_la
 
         /*Stack slot segments on top of one another*/
         QList<SlotSegment*> *slot_segment_ary = slot_segments->getSlotSegments()->at(slot_idx);
+
         if (slot_segment_ary->size() > 0) {
             for (int s = 0; s < slot_segment_ary->size(); s++)
             {
@@ -683,9 +691,12 @@ void adjustSlotSegments(SlotSegments* slot_segments, QList<SlotLayout*>* slot_la
 
                     SlotLayout* slot_layout = slot_layouts->at(slot_idx);
                     if (slot_layout != NULL) {
+
                         QPair<int, int> *min = slot_layout->getSlotLayout()->value(time_step);
+                        //qDebug() << "timestep" << time_step;
                         if (min == NULL) {
-                            exit(3);
+                            //qDebug() << "timestep" << time_step;
+                            //exit(3);
                         }
                         else {
                             int min_base = min->first;
@@ -711,7 +722,7 @@ void adjustSlotSegments(SlotSegments* slot_segments, QList<SlotLayout*>* slot_la
             }
         }
     }
-
+    //qDebug() << "above done";
     /*Set the layout for the slots under center slot*/
     for (int i = 0; i < center_slot_idx - 1; i++)
     {
@@ -773,26 +784,36 @@ void adjustSlotSegments(SlotSegments* slot_segments, QList<SlotLayout*>* slot_la
             }
         }
     }
+    //qDebug() << "under done";
 }
 
 void removeWhiteSpace(SlotBaseLayout* slot_base_layout, QList<SlotLayout*>* slot_layouts, int time_steps)
 {
     SlotSegments* slot_segments = generateSlotSegments(slot_base_layout);
+    //qDebug() << "generated slot segments";
     adjustSlotSegments(slot_segments, slot_layouts, time_steps);
+    //qDebug() << "adjusted slot segments";
 }
 
-void relaxLines(QHash<QString, QHash<int, int>* > *y_coords, QList<InteractionSession*>* interaction_sessions)
+void relaxLines(QHash<QString, QHash<int, int>* > *y_coords, QList<QPair<InteractionSession*, int>*>* slot_assigned_interaction_sessions)
 {
     /*Sort all interaction sessions in chronological order*/
-    QList<InteractionSession*> *sorted_interaction_sessions = interaction_sessions;
+    /*Need sort for streaming? I don't think so*/
+    QList<InteractionSession*> *sorted_interaction_sessions = new QList<InteractionSession*>();
+    for (int i = 0; i < slot_assigned_interaction_sessions->size(); i++)
+    {
+        sorted_interaction_sessions->append(slot_assigned_interaction_sessions->at(i)->first);
+    }
+    //QList<InteractionSession*> *sorted_interaction_sessions = slot_assigned_interaction_sessions;
     qSort(sorted_interaction_sessions->begin(), sorted_interaction_sessions->end(), startTimeLessThen);
 
     /*Check any subsequent pair of interaction sessions are relaxable
     **(subset member of the other)
     */
-    for (int i = 0; i < interaction_sessions->size(); i++)
+    for (int i = 0; i < slot_assigned_interaction_sessions->size(); i++)
     {
-        InteractionSession* interaction_session = interaction_sessions->at(i);
+        QPair<InteractionSession*, int> *pair = slot_assigned_interaction_sessions->at(i);
+        InteractionSession* interaction_session = pair->first;
         QList<InteractionSession*> *forerunning_interaction_sessions = getForerunningInteractionSessions(interaction_session, sorted_interaction_sessions, true);
         QStringList members = interaction_session->getMembers();
 
@@ -997,65 +1018,65 @@ void relaxLines(QHash<QString, QHash<int, int>* > *y_coords, QList<InteractionSe
     }
 }
 
-QHash<QString, QHash<int, int>*> *generateLayout(QList<int> *genome, InteractionSessionContainer *is_container)
-{
+//QHash<QString, QHash<int, int>*> *generateLayout(QList<int> *genome, InteractionSessionContainer *is_container)
+//{
 
-    QList<InteractionSession*> *interaction_sessions = is_container->getISList();
+//    QList<InteractionSession*> *interaction_sessions = is_container->getISList();
+//    //QList<InteractionSession*> *interaction_sessions = is_container->getTempISList_now();
+//    SlotBaseLayout *slot_base_layout = decodeGenome(genome, interaction_sessions);
 
-    SlotBaseLayout *slot_base_layout = decodeGenome(genome, interaction_sessions);
+//    if (slot_base_layout == NULL) {
+//        /*No feasible layout with this genome sequence*/
+//        return NULL;
+//    }
 
-    if (slot_base_layout == NULL) {
-        /*No feasible layout with this genome sequence*/
-        return NULL;
-    }
+//    rearrangeLineSegments(slot_base_layout);
 
-    rearrangeLineSegments(slot_base_layout);
+//    int time_steps = interaction_sessions->last()->getEndTime()+1;
 
-    int time_steps = interaction_sessions->last()->getEndTime()+1;
+//    QList<SlotLayout*> *slot_layouts = new QList<SlotLayout*>();
+//    for (int i = 0; i < SLOTS; i++) {
+//        SlotLayout *slot_layout = new SlotLayout(time_steps);
+//        slot_layouts->append(slot_layout);
+//    }
 
-    QList<SlotLayout*> *slot_layouts = new QList<SlotLayout*>();
-    for (int i = 0; i < SLOTS; i++) {
-        SlotLayout *slot_layout = new SlotLayout(time_steps);
-        slot_layouts->append(slot_layout);
-    }
+//    removeWhiteSpace(slot_base_layout, slot_layouts, time_steps);
 
-    removeWhiteSpace(slot_base_layout, slot_layouts, time_steps);
+//    QHash<QString, QHash<int, int>*> *y_coords = new QHash<QString, QHash<int, int>*>();
+//    QHash<InteractionSession*, SessionLayout*>::iterator j = slot_base_layout->getSessionsLayout()->begin();
+//    for (; j != slot_base_layout->getSessionsLayout()->end(); j++)
+//    {
+//        InteractionSession* interaction_session = j.key();
+//        SessionLayout* session_layout = j.value();
+//        int end_time = interaction_session->getEndTime();
+//        int start_time = interaction_session->getStartTime();
 
-    QHash<QString, QHash<int, int>*> *y_coords = new QHash<QString, QHash<int, int>*>();
-    QHash<InteractionSession*, SessionLayout*>::iterator j = slot_base_layout->getSessionsLayout()->begin();
-    for (; j != slot_base_layout->getSessionsLayout()->end(); j++)
-    {
-        InteractionSession* interaction_session = j.key();
-        SessionLayout* session_layout = j.value();
-        int end_time = interaction_session->getEndTime();
-        int start_time = interaction_session->getStartTime();
+//        QHash<QString, int>* layout = session_layout->getSessionLayout();
+//        int slot_number = session_layout->getSlot();
+//        SlotLayout* slot_layout = slot_layouts->at(slot_number);
+//        QHash<QString, int>::iterator k = layout->begin();
+//        for (; k != layout->end(); k++)
+//        {
+//            QString member = k.key();
+//            int y_in_slot = k.value();
+//            QHash<int, int> *y_with_timestep = y_coords->value(member);
+//            if (y_with_timestep == NULL)
+//                y_with_timestep = new QHash<int, int>();
 
-        QHash<QString, int>* layout = session_layout->getSessionLayout();
-        int slot_number = session_layout->getSlot();
-        SlotLayout* slot_layout = slot_layouts->at(slot_number);
-        QHash<QString, int>::iterator k = layout->begin();
-        for (; k != layout->end(); k++)
-        {
-            QString member = k.key();
-            int y_in_slot = k.value();
-            QHash<int, int> *y_with_timestep = y_coords->value(member);
-            if (y_with_timestep == NULL)
-                y_with_timestep = new QHash<int, int>();
+//            for (int time_step = start_time; time_step < end_time; time_step++)
+//            {
+//                QPair<int, int> *size = slot_layout->getSlotLayout()->value(time_step);
+//                int bottom_base = size->first;
+//                y_with_timestep->insert(time_step, y_in_slot+bottom_base);
+//                y_coords->insert(member, y_with_timestep);
+//            }
+//        }
+//    }
 
-            for (int time_step = start_time; time_step < end_time; time_step++)
-            {
-                QPair<int, int> *size = slot_layout->getSlotLayout()->value(time_step);
-                int bottom_base = size->first;
-                y_with_timestep->insert(time_step, y_in_slot+bottom_base);
-                y_coords->insert(member, y_with_timestep);               
-            }
-        }
-    }
+//    relaxLines(y_coords, interaction_sessions);
 
-    //relaxLines(y_coords, interaction_sessions);
-
-    return y_coords;
-}
+//    return y_coords;
+//}
 
 int evaluateLayout(QHash<QString, QHash<int, int> *> *layout, int time_steps)
 {
@@ -1148,214 +1169,564 @@ int evaluateLayout(QHash<QString, QHash<int, int> *> *layout, int time_steps)
     return fittness;
 }
 
-QPair<QHash<QString, QHash<int, int>* >*, int> *evaluateGenomes(QList<QList<int>* > *genome_pool, InteractionSessionContainer *is_container, QHash<int, int> *fittness_cache, int best_fittness, QHash<QString, QHash<int, int>* >*best_layout)
+//QPair<QHash<QString, QHash<int, int>* >*, int> *evaluateGenomes(QList<QList<int>* > *genome_pool, InteractionSessionContainer *is_container, QHash<int, int> *fittness_cache, int best_fittness, QHash<QString, QHash<int, int>* >*best_layout)
+//{
+//    //QList<InteractionSession*> *interaction_sessions = is_container->getISList();
+//    QList<InteractionSession*> *interaction_sessions = is_container->getTempISList_now();
+//    int time_steps = interaction_sessions->last()->getEndTime()
+
+//    QPair<QHash<QString, QHash<int, int>* >*, int> *best;
+//    for (int idx = 0; idx < genome_pool->size(); idx++)
+//    {
+
+//        QList<int> *genome = genome_pool->at(idx);
+//        QString gene_str = "";
+//        for (int gene_idx = 0; gene_idx < genome->size(); gene_idx++) {
+//            gene_str.append(QString::number(genome->at(gene_idx)));
+//        }
+//        int genome_hash = qHash(gene_str);
+
+//        if (!fittness_cache->contains(genome_hash))
+//        {
+
+//            QHash<QString, QHash<int, int>*> *layout = generateLayout(genome, is_container);
+//            //qDebug() << "layout generated";
+//            int fittness = evaluateLayout(layout, time_steps);
+//            fittness_cache->insert(genome_hash, fittness);
+//            if (fittness >= 0)
+//            {
+//                if (fittness < best_fittness || best_fittness == 0)
+//                {
+//                    best_layout = layout;
+//                    best_fittness = fittness;
+//                }
+//            }
+//        }
+//        best = new QPair<QHash<QString, QHash<int, int>* >*, int>(best_layout, best_fittness);
+//    }
+
+//    return best;
+//}
+
+//QList<QList<int>*> *getEliteGenomes(QList<QList<int>*> *genome_pool, QHash<int, int> *fittness_cache)
+//{
+//    /*Get Elite Genomes*/
+//    QList<int> *genome_fittness = new QList<int>();
+//    QList<QPair<int, int> > *genome_idx_and_fittness = new QList<QPair<int, int> >();
+//    for (int idx = 0; idx < genome_pool->size(); idx++)
+//    {
+//        QList<int>* genome = genome_pool->at(idx);
+//        QString gene_str = "";
+//        for (int gene_idx = 0; gene_idx < genome->size(); gene_idx++) {
+//            gene_str.append(QString::number(genome->at(gene_idx)));
+//        }
+//        int genome_hash = qHash(gene_str);
+//        int fittness = fittness_cache->value(genome_hash);
+//        genome_fittness->append(fittness);
+//        QPair<int, int> pair_idx_fittness;
+//        pair_idx_fittness.first = idx;
+//        pair_idx_fittness.second = fittness;
+//        genome_idx_and_fittness->append(pair_idx_fittness);
+//    }
+
+//    /*Genome Sort: sorting genome index according to genome fittness*/
+//    QList<int> *genome_idx_ASC = new QList<int>();
+//    qSort(genome_idx_and_fittness->begin(), genome_idx_and_fittness->end(), fittnessLessThen);
+
+//    for (int i = 0; i < genome_idx_and_fittness->size(); i++) {
+//        QPair<int, int> pair = genome_idx_and_fittness->at(i);
+//        if (pair.second != -1) {
+//            genome_idx_ASC->append(pair.first);
+//        }
+//    }
+//    QList<int> *elite_idx_ary = new QList<int>();
+
+//    for (int i = 0; i < genome_idx_ASC->size(); i++) {
+
+//        if (i == ELITE_POPULATION) {
+//            break;
+//        }
+//        elite_idx_ary->append(genome_idx_ASC->at(i));
+//    }
+
+//    QList<QList<int> *> *elite_genomes = new QList<QList<int>*>();
+//    for (int i = 0; i < elite_idx_ary->size(); i++) {
+//        int idx = elite_idx_ary->at(i);
+//        QString elite_genomes_str = "";
+//        for (int j = 0; j < genome_pool->at(idx)->size(); j++) {
+//            elite_genomes_str.append(QString::number(genome_pool->at(idx)->at(j)));
+//        }
+//        elite_genomes->append(genome_pool->at(idx));
+//    }
+
+//    return elite_genomes;
+//}
+
+//QList<QList<int>*> *renewGenomes(QList<QList<int>*> *genome_pool, QHash<int, int> *fittness_cache)
+//{
+//    /*Renew Genomes*/
+//    QList<QList<int>*> *elite_genomes = getEliteGenomes(genome_pool, fittness_cache);
+//    QList<QList<int>*> *new_genome_pool = elite_genomes;
+//    int elite_genomes_count = elite_genomes->size();
+
+//    QTime time = QTime::currentTime();
+//    qsrand((uint)time.msec());
+
+//    /*Generate the new generation pool*/
+//    while (new_genome_pool->size() < POPULATION) {
+
+//        QList<int> *randomGenomes = new QList<int>();
+
+//        for (int i = 0; i < 2; i++) {
+//            int random_int = qrand() % elite_genomes_count;
+//            randomGenomes->append(random_int);
+//        }
+//        QList<int> *mom_genome = elite_genomes->at(randomGenomes->at(0));
+//        QList<int> *dad_genome = elite_genomes->at(randomGenomes->at(1));
+//        QList<int> *switches = new QList<int>();
+//        int mom_genome_gene_count = mom_genome->size();
+//        QList<int> *randomSwitches = new QList<int>();
+//        for (int i = 0; i < 2; i++) {
+//            int random_int = qrand() % (mom_genome_gene_count+1);
+//            randomSwitches->append(random_int);
+//        }
+//        switches->append(randomSwitches->at(0));
+//        switches->append(randomSwitches->at(1));
+
+//        qSort(switches->begin(), switches->end());
+
+//        /*Switching of the gene*/
+//        int switch_idx = switches->at(0);
+//        int switch_sdx = switches->at(1);
+
+//        QList<int> *mom_frag = new QList<int>();
+//        QList<int> *dad_frag = new QList<int>();
+//        for (int f = switch_idx; f < switch_sdx; f++) {
+//            mom_frag->append(mom_genome->at(f));
+//            dad_frag->append(dad_genome->at(f));
+//        }
+//        QList<int> *daughter_genome = new QList<int>();
+//        QList<int> *son_genome = new QList<int>();
+
+//        /*Genome crossover*/
+//        for (int i = 0; i < mom_genome->size(); i++)
+//        {
+//            int mom_val = mom_genome->at(i);
+//            int dad_val = dad_genome->at(i);
+//            if (i >= switch_idx && i < switch_sdx)
+//            {
+//                mom_val = dad_frag->at(i-switch_idx);
+//                dad_val = mom_frag->at(i-switch_idx);
+//            }
+//            daughter_genome->append(mom_val);
+//            son_genome->append(dad_val);
+//        }
+
+//        /*Mutation of the gene*/
+//        /*Daughter*/
+//        float tmp_mutation_prob = (float)qrand()/(float)RAND_MAX;
+//        if (tmp_mutation_prob < MUTATION_RATE)
+//        {
+//            int random_idx = qrand() % (daughter_genome->size() - 1);
+//            int random_val = qrand() % (SLOTS - 1);
+//            daughter_genome->replace(random_idx, random_val);
+//        }
+//        /*Son*/
+//        tmp_mutation_prob = (float)qrand()/(float)RAND_MAX;
+//        if (tmp_mutation_prob < MUTATION_RATE)
+//        {
+//            int random_idx = qrand() % (son_genome->size() - 1);
+//            int random_val = qrand() % (SLOTS - 1);
+//            son_genome->replace(random_idx, random_val);
+//        }
+//        new_genome_pool->append(daughter_genome);
+//        new_genome_pool->append(son_genome);
+//    }
+//    QList<QList<int>*> *final_new_genome_pool = new QList<QList<int>*>();
+//    for (int r = 0; r < new_genome_pool->size(); r++) {
+//        if (r >= POPULATION) {
+//            break;
+//        }
+//        final_new_genome_pool->append(new_genome_pool->at(r));
+//    }
+//    return final_new_genome_pool;
+//}
+
+
+QHash<QString, QHash<int, int>* >* generateCurrentLayout(InteractionSessionContainer *is_container)
 {
-    QList<InteractionSession*> *interaction_sessions = is_container->getISList();
-    int time_steps = interaction_sessions->last()->getEndTime()+1;
 
-    QPair<QHash<QString, QHash<int, int>* >*, int> *best;
-    for (int idx = 0; idx < genome_pool->size(); idx++)
+    /*Create slot base layout and set it with interaction session and its slot number */
+    QList<QPair<InteractionSession*, int>*> *slot_assigned_interaction_sessions = is_container->getInteractionSessionsWithSlot();
+    qDebug() << "Check if slot is well assigned into interaction sessions.";
+    for (int i = 0; i < slot_assigned_interaction_sessions->size(); i++)
     {
+        qDebug() << slot_assigned_interaction_sessions->at(i)->first->getMembersOneStr() << slot_assigned_interaction_sessions->at(i)->second;
+    }
+    SlotBaseLayout * slot_base_layout = NULL;
 
-        QList<int> *genome = genome_pool->at(idx);
-        QString gene_str = "";
-        for (int gene_idx = 0; gene_idx < genome->size(); gene_idx++) {
-            gene_str.append(QString::number(genome->at(gene_idx)));
+    if (!slot_assigned_interaction_sessions->isEmpty()) {
+        slot_base_layout = new SlotBaseLayout(SLOTS);
+
+        for (int i = 0; i < slot_assigned_interaction_sessions->size(); i++)
+        {            
+            QPair<InteractionSession*, int>* slot_assigned_interaction_session = slot_assigned_interaction_sessions->at(i);
+            InteractionSession *interaction_session = slot_assigned_interaction_session->first;
+            int slot_number = slot_assigned_interaction_session->second;
+            bool _valid_layout = slot_base_layout->setInteractionSessionToSlot(interaction_session, slot_number);
+            if (!_valid_layout) {
+                return NULL;
+            }
         }
-        int genome_hash = qHash(gene_str);
+    }
 
-        if (!fittness_cache->contains(genome_hash))
+    if (slot_base_layout == NULL) {
+        /*No feasible layout with this genome sequence*/
+        qDebug() << "slot_base_layout is null";
+        return NULL;
+    }
+
+    rearrangeLineSegments(slot_base_layout);
+
+    int time_steps = slot_assigned_interaction_sessions->last()->first->getEndTime();
+
+    QList<SlotLayout*> *slot_layouts = new QList<SlotLayout*>();
+    for (int i = 0; i < SLOTS; i++) {
+        SlotLayout *slot_layout = new SlotLayout(time_steps);
+        slot_layouts->append(slot_layout);
+    }
+
+    removeWhiteSpace(slot_base_layout, slot_layouts, time_steps);
+
+    QHash<QString, QHash<int, int>*> *y_coords = new QHash<QString, QHash<int, int>*>();
+    QHash<InteractionSession*, SessionLayout*>::iterator j = slot_base_layout->getSessionsLayout()->begin();
+    for (; j != slot_base_layout->getSessionsLayout()->end(); j++)
+    {
+        InteractionSession* interaction_session = j.key();
+        SessionLayout* session_layout = j.value();
+        int end_time = interaction_session->getEndTime();
+        int start_time = interaction_session->getStartTime();
+
+
+        QHash<QString, int>* layout = session_layout->getSessionLayout();
+        int slot_number = session_layout->getSlot();
+        SlotLayout* slot_layout = slot_layouts->at(slot_number);
+        QHash<QString, int>::iterator k = layout->begin();
+        for (; k != layout->end(); k++)
         {
-            QHash<QString, QHash<int, int>*> *layout = generateLayout(genome, is_container);
-            int fittness = evaluateLayout(layout, time_steps);
-            fittness_cache->insert(genome_hash, fittness);
-            if (fittness >= 0)
+            QString member = k.key();
+            int y_in_slot = k.value();
+            QHash<int, int> *y_with_timestep = y_coords->value(member);
+            if (y_with_timestep == NULL)
+                y_with_timestep = new QHash<int, int>();
+
+            for (int time_step = start_time; time_step < end_time; time_step++)
             {
-                if (fittness < best_fittness || best_fittness == 0)
-                {
-                    best_layout = layout;
-                    best_fittness = fittness;
+                QPair<int, int> *size = slot_layout->getSlotLayout()->value(time_step);
+                if (size != NULL) {
+                    int bottom_base = size->first;
+                    //qDebug() << interaction_session->getMembersOneStr() << time_step; -> correctly working
+                    y_with_timestep->insert(time_step, y_in_slot+bottom_base);
+                    y_coords->insert(member, y_with_timestep);
                 }
             }
         }
-        best = new QPair<QHash<QString, QHash<int, int>* >*, int>(best_layout, best_fittness);
     }
 
-    return best;
+    //relaxLines(y_coords, slot_assigned_interaction_sessions); -> cause connection or collapse between lines
+
+    if (y_coords == NULL) {
+        qDebug() << "y_coords is NULL";
+    }
+    return y_coords;
+
 }
-
-QList<QList<int>*> *getEliteGenomes(QList<QList<int>*> *genome_pool, QHash<int, int> *fittness_cache)
+QList<int> *randomGenerateSlots(int max_slot_number, int slotList_length)
 {
-    /*Get Elite Genomes*/
-    QList<int> *genome_fittness = new QList<int>();
-    QList<QPair<int, int> > *genome_idx_and_fittness = new QList<QPair<int, int> >();
-    for (int idx = 0; idx < genome_pool->size(); idx++)
-    {
-        QList<int>* genome = genome_pool->at(idx);
-        QString gene_str = "";
-        for (int gene_idx = 0; gene_idx < genome->size(); gene_idx++) {
-            gene_str.append(QString::number(genome->at(gene_idx)));
-        }
-        int genome_hash = qHash(gene_str);
-        int fittness = fittness_cache->value(genome_hash);
-        genome_fittness->append(fittness);
-        QPair<int, int> pair_idx_fittness;
-        pair_idx_fittness.first = idx;
-        pair_idx_fittness.second = fittness;
-        genome_idx_and_fittness->append(pair_idx_fittness);
-    }    
-
-    /*Genome Sort: sorting genome index according to genome fittness*/
-    QList<int> *genome_idx_ASC = new QList<int>();
-    qSort(genome_idx_and_fittness->begin(), genome_idx_and_fittness->end(), fittnessLessThen);
-
-    for (int i = 0; i < genome_idx_and_fittness->size(); i++) {
-        QPair<int, int> pair = genome_idx_and_fittness->at(i);
-        if (pair.second != -1) {
-            genome_idx_ASC->append(pair.first);
-        }
-    }
-    QList<int> *elite_idx_ary = new QList<int>();
-
-    for (int i = 0; i < genome_idx_ASC->size(); i++) {
-
-        if (i == ELITE_POPULATION) {
-            break;
-        }
-        elite_idx_ary->append(genome_idx_ASC->at(i));
-    }
-
-    QList<QList<int> *> *elite_genomes = new QList<QList<int>*>();
-    for (int i = 0; i < elite_idx_ary->size(); i++) {
-        int idx = elite_idx_ary->at(i);
-        QString elite_genomes_str = "";
-        for (int j = 0; j < genome_pool->at(idx)->size(); j++) {
-            elite_genomes_str.append(QString::number(genome_pool->at(idx)->at(j)));
-        }
-        elite_genomes->append(genome_pool->at(idx));
-    }
-
-    return elite_genomes;
-}
-
-QList<QList<int>*> *renewGenomes(QList<QList<int>*> *genome_pool, QHash<int, int> *fittness_cache)
-{
-    /*Renew Genomes*/
-    QList<QList<int>*> *elite_genomes = getEliteGenomes(genome_pool, fittness_cache);
-    QList<QList<int>*> *new_genome_pool = elite_genomes;
-    int elite_genomes_count = elite_genomes->size();
-
     QTime time = QTime::currentTime();
     qsrand((uint)time.msec());
 
-    /*Generate the new generation pool*/
-    while (new_genome_pool->size() < POPULATION) {
-
-        QList<int> *randomGenomes = new QList<int>();
-
-        for (int i = 0; i < 2; i++) {
-            int random_int = qrand() % elite_genomes_count;
-            randomGenomes->append(random_int);
-        }
-        QList<int> *mom_genome = elite_genomes->at(randomGenomes->at(0));
-        QList<int> *dad_genome = elite_genomes->at(randomGenomes->at(1));
-        QList<int> *switches = new QList<int>();
-        int mom_genome_gene_count = mom_genome->size();
-        QList<int> *randomSwitches = new QList<int>();
-        for (int i = 0; i < 2; i++) {
-            int random_int = qrand() % (mom_genome_gene_count+1);
-            randomSwitches->append(random_int);
-        }
-        switches->append(randomSwitches->at(0));
-        switches->append(randomSwitches->at(1));
-
-        qSort(switches->begin(), switches->end());
-
-        /*Switching of the gene*/
-        int switch_idx = switches->at(0);
-        int switch_sdx = switches->at(1);
-
-        QList<int> *mom_frag = new QList<int>();
-        QList<int> *dad_frag = new QList<int>();
-        for (int f = switch_idx; f < switch_sdx; f++) {
-            mom_frag->append(mom_genome->at(f));
-            dad_frag->append(dad_genome->at(f));
-        }
-        QList<int> *daughter_genome = new QList<int>();
-        QList<int> *son_genome = new QList<int>();
-
-        /*Genome crossover*/
-        for (int i = 0; i < mom_genome->size(); i++)
+    QList<int> *slotList = new QList<int>();
+    if (slotList_length > 0)
+    {
+        for (int i = 0; i < slotList_length; i++)
         {
-            int mom_val = mom_genome->at(i);
-            int dad_val = dad_genome->at(i);
-            if (i >= switch_idx && i < switch_sdx)
+            int random_int = qrand() % max_slot_number;
+            slotList->append(random_int);
+            for (int j = 0; j < i; j++)
             {
-                mom_val = dad_frag->at(i-switch_idx);
-                dad_val = mom_frag->at(i-switch_idx);
+                if (slotList->at(j) == slotList->at(i))
+                {
+                    i--;
+                }
             }
-            daughter_genome->append(mom_val);
-            son_genome->append(dad_val);
+        }
+        return slotList;
+    }
+    else {
+        return NULL;
+    }
+}
+QList<int> *random_openedSlots(int slotList_length, QList<int> *openedSlotList)
+{
+    QTime time = QTime::currentTime();
+    qsrand((uint)time.msec());
+    QList<int> *random_openedSlotList = new QList<int>();
+
+    if (slotList_length > 0)
+    {
+        for (int i = 0; i < slotList_length; i++)
+        {
+            int random_index = qrand() % openedSlotList->size();
+            int random_opened_slot = openedSlotList->at(random_index);
+            random_openedSlotList->append(random_opened_slot);
+            for (int j = 0; j < i; j++)
+            {
+                if (random_openedSlotList->at(j) == random_openedSlotList->at(i))
+                {
+                    i--;
+                }
+            }
+        }
+        return random_openedSlotList;
+    }
+    else {
+        return NULL;
+    }
+}
+
+
+void assignSlotsToNewISs(InteractionSessionContainer *is_container,
+                         QList<InteractionSession*> *current_new_interaction_sessions,
+                         QList<int>* random_openedSlotList)
+{
+    QList<QPair<InteractionSession*, int>*> *tempISs = new QList<QPair<InteractionSession*, int>*>();
+    if (!is_container->getInteractionSessionsWithSlot()->isEmpty())
+    {
+        for (int i = 0; i < is_container->getInteractionSessionsWithSlot()->size(); i++)
+        {
+            QPair<InteractionSession*, int> *is_and_slot = is_container->getInteractionSessionsWithSlot()->at(i);
+            for (int j = 0; j < is_container->getISList()->size(); j++)
+            {
+                InteractionSession* is = is_container->getISList()->at(j);
+                if (is->getMembersOneStr().compare(is_and_slot->first->getMembersOneStr()) == 0 && is->getStartTime() == is_and_slot->first->getStartTime())
+                {
+                    QPair<InteractionSession*, int> *temp_is_and_slot = new QPair<InteractionSession*, int>();
+                    temp_is_and_slot->first = is;
+                    temp_is_and_slot->second = is_and_slot->second;
+                    tempISs->append(temp_is_and_slot);
+                }
+            }
+        }
+    }
+    if (!current_new_interaction_sessions->isEmpty())
+    {
+        /*Second, assign all new interaction sessions with the same slot of the previous interaction sessions*/
+        for (int i = 0; i < current_new_interaction_sessions->size(); i++)
+        {
+            InteractionSession *current_new_interaction_session = current_new_interaction_sessions->at(i);
+            for (int j = 0; j < is_container->getISList()->size(); j++)
+            {
+                InteractionSession* whole_interaction_session = is_container->getISList()->at(j);
+                if (whole_interaction_session->getMembersOneStr().compare(current_new_interaction_session->getMembersOneStr()) == 0 && whole_interaction_session->getStartTime() == current_new_interaction_session->getStartTime())
+                {
+                    int slot_number = random_openedSlotList->at(i);
+                    qDebug() << "Assigning: " << slot_number;
+                    QPair<InteractionSession*, int> *newIS = new QPair<InteractionSession*, int>();
+                    newIS->first = whole_interaction_session;
+                    newIS->second = slot_number;
+                    tempISs->append(newIS);
+                }
+            }
+        }
+        is_container->setSlotAssignedInteractionSesesions(tempISs);
+    }
+}
+void assignSlotsToExtendingISs(InteractionSessionContainer *is_container, QList<QPair<InteractionSession*, QString> *> *classified_interaction_sessions, QList<InteractionSession*> *current_new_interaction_sessions, QList<int> *openedSlotList)
+{
+    QList<InteractionSession*> *current_extending_interaction_sessions = new QList<InteractionSession*>();
+    QList<int> *closedSlotList = new QList<int>();
+
+    QList<QPair<InteractionSession*, int>*> *tempISs = new QList<QPair<InteractionSession*, int>*>();
+    if (!is_container->getInteractionSessionsWithSlot()->isEmpty())
+    {
+        for (int i = 0; i < is_container->getISList()->size(); i++)
+        {
+            InteractionSession *is = is_container->getISList()->at(i);
+            for (int j = 0; j < is_container->getInteractionSessionsWithSlot()->size(); j++)
+            {
+                QPair<InteractionSession*, int> *is_and_slot = is_container->getInteractionSessionsWithSlot()->at(j);
+                if (is->getMembersOneStr().compare(is_and_slot->first->getMembersOneStr()) == 0 && is->getStartTime() == is_and_slot->first->getStartTime())
+                {
+                    QPair<InteractionSession*, int> *temp_is_and_slot = new QPair<InteractionSession*, int>();
+                    temp_is_and_slot->first = is;
+                    temp_is_and_slot->second = is_and_slot->second;
+                    tempISs->append(temp_is_and_slot);
+                }
+            }
+        }
+    }
+    if (!classified_interaction_sessions->isEmpty()) {
+        /*Make a group according to interaction session's flag, extend*/
+        /*Make a group according to interaction session's flag, new*/
+        for (int i = 0; i < classified_interaction_sessions->size(); i++)
+        {
+            QPair<InteractionSession*, QString> *classified_interaction_session = classified_interaction_sessions->at(i);
+            InteractionSession* interaction_session = classified_interaction_session->first;
+            QString flag = classified_interaction_session->second;
+            if (flag.compare("extend") == 0)
+            {
+                current_extending_interaction_sessions->append(interaction_session);
+                qDebug() << "added to extend list" << interaction_session->getMembersOneStr();
+            }
+            if (flag.compare("new") == 0)
+            {
+                current_new_interaction_sessions->append(interaction_session);
+                qDebug() << "added to new list" << interaction_session->getMembersOneStr();
+            }
+
+        }
+    }
+    if (!current_extending_interaction_sessions->isEmpty())
+    {
+        /*First, assign all extending interaction sessions with the same slot of the previous interaction sessions'*/
+        for (int i = 0; i < current_extending_interaction_sessions->size(); i++)
+        {
+            InteractionSession *current_extending_interaction_session = current_extending_interaction_sessions->at(i);
+
+            QList<QPair<InteractionSession*, int>*> *prev_slot_assigned_interaction_sessions = tempISs;
+
+            for (int j = 0; j < prev_slot_assigned_interaction_sessions->size(); j++)
+            {
+
+                QPair<InteractionSession*, int> *prev_slot_assigned_interaction_session = prev_slot_assigned_interaction_sessions->at(j);
+                InteractionSession* prev_interaction_session = prev_slot_assigned_interaction_session->first;
+                int slot_number = prev_slot_assigned_interaction_session->second;
+                //qDebug() << "prev IS has " << prev_interaction_session->getMembersOneStr() << slot_number;
+                if (current_extending_interaction_session->getMembersOneStr().compare(prev_interaction_session->getMembersOneStr()) == 0)
+                {
+                    //qDebug() << "current IS has " << current_extending_interaction_session->getMembersOneStr() << current_extending_interaction_session->getStartTime() << current_extending_interaction_session->getEndTime();
+                    if (prev_interaction_session->getEndTime() == current_extending_interaction_session->getEndTime())
+                    {
+                        closedSlotList->append(slot_number);
+                    }
+                }
+            }
+        }
+        is_container->setSlotAssignedInteractionSesesions(tempISs);
+    }
+    //QSet<int> set = closedSlotList->toSet(); -> closedSlotList checked!
+    //qDebug() << "closed set size: " << set.size();
+    /*Find open slot list*/
+    if (!current_extending_interaction_sessions->isEmpty())
+    {
+        for (int i = 0; i < SLOTS; i++)
+        {
+            if (!closedSlotList->contains(i))
+            {
+                openedSlotList->append(i);
+            }
+        }
+    }
+    else
+    {
+        for (int i = 0; i < SLOTS; i++)
+        {
+
+            openedSlotList->append(i);
+
+        }
+    }
+
+
+}
+
+QList<QPair<InteractionSession*, QString> *> *classifyInteractionSessions(InteractionSessionContainer *is_container)
+{
+    QList<InteractionSession*> *current_interaction_sessions = is_container->getTempISList_now();
+    QList<InteractionSession*> *prev_interaction_sessions = is_container->getTempISList_prev();
+    QList<QPair<InteractionSession*, QString> *> *classified_interaction_sessions = new QList<QPair<InteractionSession*, QString> *>();
+    int count = 0;
+
+    is_container->initializeClassifiedInteractionSessions();
+
+    for (int i = 0; i < current_interaction_sessions->size(); i++)
+    {
+        InteractionSession *current_interaction_session = current_interaction_sessions->at(i);
+        if (prev_interaction_sessions->isEmpty()) {
+            is_container->addClassifiedInteractionSession(current_interaction_session, "new");
+        }
+        else {
+            for (int j = 0; j < prev_interaction_sessions->size(); j++)
+            {
+                InteractionSession *prev_interaction_session = prev_interaction_sessions->at(j);
+                if (current_interaction_session->getMembersOneStr().compare(prev_interaction_session->getMembersOneStr()) != 0)
+                {
+                    count++;
+                }
+
+            }
+            if (count == prev_interaction_sessions->size()) {
+                is_container->addClassifiedInteractionSession(current_interaction_session, "new");
+
+            }
+            if (count < prev_interaction_sessions->size()) {
+                is_container->addClassifiedInteractionSession(current_interaction_session, "extend");
+
+            }
+            count = 0;
         }
 
-        /*Mutation of the gene*/
-        /*Daughter*/
-        float tmp_mutation_prob = (float)qrand()/(float)RAND_MAX;
-        if (tmp_mutation_prob < MUTATION_RATE)
-        {
-            int random_idx = qrand() % (daughter_genome->size() - 1);
-            int random_val = qrand() % (SLOTS - 1);
-            daughter_genome->replace(random_idx, random_val);
-        }
-        /*Son*/
-        tmp_mutation_prob = (float)qrand()/(float)RAND_MAX;
-        if (tmp_mutation_prob < MUTATION_RATE)
-        {
-            int random_idx = qrand() % (son_genome->size() - 1);
-            int random_val = qrand() % (SLOTS - 1);
-            son_genome->replace(random_idx, random_val);
-        }
-        new_genome_pool->append(daughter_genome);
-        new_genome_pool->append(son_genome);
     }
-    QList<QList<int>*> *final_new_genome_pool = new QList<QList<int>*>();
-    for (int r = 0; r < new_genome_pool->size(); r++) {
-        if (r >= POPULATION) {
-            break;
-        }
-        final_new_genome_pool->append(new_genome_pool->at(r));
-    }
-    return final_new_genome_pool;
+    classified_interaction_sessions = is_container->getClassifiedInteractionSessions();
+    return classified_interaction_sessions;
+
 }
 
 QHash<QString, QHash<int, int>* >* computeLayout(InteractionSessionContainer *is_container)
 {
-    QList<QList<int>*> *genome_pool = populateGenomes(POPULATION, SLOTS, is_container->getISList()->size());
 
-    QHash<int, int> *fittness_cache = new QHash<int, int>();
+    QList<QPair<InteractionSession*, QString> *> *classified_interaction_sessions = classifyInteractionSessions(is_container);
+    QList<int> *openedSlotList = new QList<int>();
+    QList<InteractionSession*> *current_new_interaction_sessions = new QList<InteractionSession*>();
 
-    QPair<QHash<QString, QHash<int, int>* >*, int> *best = evaluateGenomes(genome_pool, is_container, fittness_cache, 0, NULL);
-    QHash<QString, QHash<int, int>* >*best_layout = best->first;
-    int best_fittness = best->second;
-
-    for (int generation = 0; generation < FINAL_GENERATION; generation++)
+    if (!classified_interaction_sessions->isEmpty())
     {
-        qDebug("Generation %d...", generation);
-        genome_pool = renewGenomes(genome_pool, fittness_cache);
-        QPair<QHash<QString, QHash<int, int>* >*, int> *temp_best = evaluateGenomes(genome_pool, is_container, fittness_cache, best_fittness, best_layout);
-        QHash<QString, QHash<int, int>* >*temp_best_layout = temp_best->first;
-        int temp_best_fittness = temp_best->second;
+        assignSlotsToExtendingISs(is_container, classified_interaction_sessions, current_new_interaction_sessions, openedSlotList);
+        qDebug() << "current_new_interaction_sessions size:" << current_new_interaction_sessions->size() << "opened_slot_list size: " << openedSlotList->size();
+        int slotList_length = current_new_interaction_sessions->size();
 
-        if (temp_best_layout != NULL)
+        QList<int> *random_openedSlotList = random_openedSlots(slotList_length, openedSlotList);
+        /*Assign random slot numbers to the new interaction session for the open slots*/
+        assignSlotsToNewISs(is_container, current_new_interaction_sessions, random_openedSlotList);
+
+        /*Generate current layout*/
+        QHash<QString, QHash<int, int>*> *current_layout = generateCurrentLayout(is_container);
+        if (current_layout != NULL)
         {
-            best_layout = temp_best_layout;
-            best_fittness = temp_best_fittness;
+            int fittness = evaluateLayout(current_layout, is_container->getISList()->last()->getEndTime());
+            qDebug() << "fittness: " << fittness;
+            return current_layout;
+
         }
-
+        else
+        {
+            qDebug() << "no layout!";
+            return NULL;
+        }
     }
-    return best_layout;
-}
 
+    return NULL;
+}
+void initializeConnections(QList<InteractionSession*> *interaction_sessions)
+{
+    for (int i = 0; i < interaction_sessions->size(); i++)
+    {
+        InteractionSession* interaction_session = interaction_sessions->at(i);
+        interaction_session->proceeding_interaction_sessions->clear();
+        interaction_session->following_interaction_sessions->clear();
+    }
+}
 void registerConnections(QList<InteractionSession*> *interaction_sessions)
 {
     for (int i = 0; i < interaction_sessions->size(); i++)
@@ -1378,7 +1749,11 @@ void registerConnections(QList<InteractionSession*> *interaction_sessions)
 
 void outputLayout(QString outputFileName, QHash<QString, QHash<int, int>* > *layout, InteractionSessionContainer *is_container)
 {
-    int time_steps = is_container->getISList()->last()->getEndTime()+1;
+    QList<InteractionSession*> *interaction_sessions = is_container->getISList();
+    int time_steps = interaction_sessions->last()->getEndTime();
+    //QList<QPair<InteractionSession*, int>*> *slot_assigned_interaction_sessions = is_container->getInteractionSessionsWithSlot();
+    //int time_steps = slot_assigned_interaction_sessions->last()->first->getEndTime()+1;
+
     QFile file(outputFileName);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
         return;
@@ -1389,6 +1764,7 @@ void outputLayout(QString outputFileName, QHash<QString, QHash<int, int>* > *lay
         QString member = i.key();
         QHash<int, int> *member_coords = i.value();
         stream << member;
+
         for (int time_step = 0; time_step < time_steps; time_step++)
         {
             stream << "\t";
@@ -1401,6 +1777,7 @@ void outputLayout(QString outputFileName, QHash<QString, QHash<int, int>* > *lay
         }
         stream << "\n";
     }
+
     file.close();
 }
 void loadInteractionSessions(QString fileName, InteractionSessionContainer *iscontainer) {
@@ -1552,6 +1929,7 @@ void loadData(QString fileName, InteractionSessionContainer *iscontainer)
         if (temp.size() > 1)
         {
 
+            qDebug() << "When " << time << ": ";
             for (int i = 1; i < temp.size(); i++)
             {
                 /*Get the list of the members per time*/
@@ -1582,16 +1960,21 @@ void loadData(QString fileName, InteractionSessionContainer *iscontainer)
                     InteractionSession* is = new InteractionSession(id, members, time, time+1, location);
                     is->setMembersOneStr(membersSingleStr);
                     iscontainer->add(is);
+
                     id++;
                 }
                 /*Exist in the previous interaction sessions, update the ending time of the interaction session of the current members*/
                 else {
                     iscontainer->update(existing_is, prev_time, time+1);
+
                 }
+
             }
 
         }
-        /*Set all members' interaction sessions for the previous timeslot*/
+
+
+        /*Set the interaction sessions of the current timeslot*/
         for (int k = 1; k < temp.size(); k++)
         {
             QStringList members;
@@ -1605,11 +1988,37 @@ void loadData(QString fileName, InteractionSessionContainer *iscontainer)
             iscontainer->addTemp(temp_is);
             temp_id++;
         }
+        /*Print prevIS list and current IS list for each time*/
+//        QList<InteractionSession*> *tempISList_now = iscontainer->getTempISList_now();
+//        QList<InteractionSession*> *tempISList_prev = iscontainer->getTempISList_prev();
+//        qDebug() << "Previous interaction sessions:";
+//        for (int j = 0; j < tempISList_prev->size(); j++) {
+//            InteractionSession *is = tempISList_prev->at(j);
+//            is->printIS();
+//        }
+//        qDebug() << "Current interaction sessions:";
+//        for (int j = 0; j < tempISList_now->size(); j++) {
+//            InteractionSession *is = tempISList_now->at(j);
+//            is->printIS();
+//        }
+
+        /*Set interaction sessions of the previous timeslot*/
         iscontainer->setPrevISList(iscontainer->getTempISList_now());
-        /********************************************************************/
+
 
         /*Update the previous time*/
         prev_time = time+1;
+
+
+        /*Print all IS list for each time*/
+        qDebug() << "Whole interaction sessions:";
+        QList<InteractionSession*> *tempISList = iscontainer->getISList();
+        for (int i = 0; i < tempISList->size(); i++) {
+            InteractionSession *is = tempISList->at(i);
+            is->printIS();
+        }
+        qDebug() << "\n";
+
     }
     file.close();
 }

@@ -37,7 +37,7 @@ void SlotSegment::setInteractionSession(InteractionSession *interaction_session,
 
     assert(top_coord != INT_MAX);
     assert(bottom_coord != INT_MAX);
-    for (int time_step = interaction_session->getStartTime(); time_step <= interaction_session->getEndTime(); time_step++)
+    for (int time_step = interaction_session->getStartTime(); time_step < interaction_session->getEndTime(); time_step++)
     {
         bottom_coordinates->insert(time_step, bottom_coord);
         top_coordinates->insert(time_step, top_coord);

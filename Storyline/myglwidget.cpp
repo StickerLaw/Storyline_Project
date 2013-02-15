@@ -7,6 +7,8 @@ myGLWidget::myGLWidget(QWidget *parent) :
     _canvas_height = parent->height();
 
 
+    prev_characters = new QList<Character*>();
+    setAutoFillBackground(true);
 }
 
 QList<GLfloat> *myGLWidget::compute_curve_coordinates(float x1, float y1, float x2, float y2, int num_of_time_step){
@@ -50,60 +52,66 @@ QList<GLfloat> *myGLWidget::compute_curve_coordinates(float x1, float y1, float 
 
 }
 void myGLWidget::takeLayout(QHash<QString, QHash<int, int>* >* _layout) {
+
     layout = _layout;
     QHash<QString, QHash<int, int>* >::iterator it = layout->begin();
     int member_count = 0;
+    characters = new QList<Character*>();
 
     for (; it != layout->end(); it++) {
         Character* character = new Character();
-
         QString member = it.key();
         character->setID(member_count);
         character->setName(member);
-
-        GLfloat prev_y_pos;
+        GLfloat prev_y_pos = FLT_MAX;
         int prev_timestep = 0;
         QHash<int, int>* timesteps_and_positions = it.value();
         QList<int> sorted_times = timesteps_and_positions->keys();
         qSort(sorted_times.begin(), sorted_times.end());
 
         int time_count = 0;
+        int timestep = 0;
         for (int i = 0; i < sorted_times.size(); i++)
         {
-            int timestep = sorted_times.at(i);
+            timestep = sorted_times.at(i);
             GLfloat y_pos = static_cast< float >(timesteps_and_positions->value(timestep));
-
             character->addVertex((float)(timestep)*width_per_time);
             character->addVertex((float)y_pos*height_per_time);
-
+            if (timestep == 0) {
+                character->addTimestep(timestep);
+                character->addTimestep(timestep);
+            }
             if (time_count > 0) {
 
                 if (abs(prev_timestep - timestep) == 1 ) {
+
                     if (prev_y_pos == y_pos) {
-                        character->addStraightVertex((float)(prev_timestep)*width_per_time);
-                        character->addStraightVertex((float)prev_y_pos*height_per_time);
-                        character->addTimestep(prev_timestep);
-                        character->addTimestep(prev_timestep);
+
                         character->addStraightVertex((float)(timestep)*width_per_time);
                         character->addStraightVertex((float)y_pos*height_per_time);
                         character->addTimestep(timestep);
                         character->addTimestep(timestep);
+                        character->addStraightVertex((float)(timestep+1)*width_per_time);
+                        character->addStraightVertex((float)y_pos*height_per_time);
+                        character->addTimestep(timestep+1);
+                        character->addTimestep(timestep+1);
+
                     }
                     else {
-                        GLfloat temp_vertex1_x = (float)(prev_timestep) * width_per_time;
+                        GLfloat temp_vertex1_x = (float)(timestep) * width_per_time;
                         GLfloat temp_vertex1_y = (float)prev_y_pos* height_per_time;
-                        GLfloat temp_vertex2_x = (float)(timestep) * width_per_time;
+                        GLfloat temp_vertex2_x = (float)(timestep+1) * width_per_time;
                         GLfloat temp_vertex2_y = (float)y_pos * height_per_time;
-
                         int num_of_curve_steps = 10;
                         QList<GLfloat> *temp_curve = compute_curve_coordinates(temp_vertex1_x, temp_vertex1_y, temp_vertex2_x, temp_vertex2_y, num_of_curve_steps);
                         for (int i = 0; i < num_of_curve_steps*4; i++) {
                             character->addCurveVertex(temp_curve->at(i));
                             character->addTimestep(timestep);
                         }
-
                     }
+
                 }
+
             }
 
             prev_y_pos = y_pos;
@@ -111,11 +119,38 @@ void myGLWidget::takeLayout(QHash<QString, QHash<int, int>* >* _layout) {
             time_count++;
 
         }
-        character->setColor();
+
+        if (prev_characters->isEmpty()) {
+
+            character->setColor(NULL);
+        }
+        else {
+
+            for (int i = 0; i < prev_characters->size(); i++)
+            {
+
+                if(prev_characters->at(i)->getName().compare(character->getName()) == 0)
+                {
+                    QList<float> *color = prev_characters->at(i)->getColor();
+                    character->setColor(color);
+                    break;
+
+                }
+
+                else
+                {
+                    character->setColor(NULL);
+
+                }
+
+            }
+        }
         characters->append(character);
         member_count++;
+
     }
 
+    prev_characters = characters;
     setSize();
 
 }
@@ -127,36 +162,45 @@ void myGLWidget::setSize() {
     //Get the minimum position of one node member (A<B)
     QList<float> *time_vertices = new QList<float>();
     QList<float> *y_pos_vertices = new QList<float>();
-
-    for (int i = 0; i < characters->size(); i++) {
-        Character *character = characters->at(i);
-        for (int j = 0; j < character->getCurveVertices()->size(); j++) {
-            if (j % 2 == 0) {
-                time_vertices->append(character->getCurveVertices()->at(j));
+    if (characters != NULL) {
+        for (int i = 0; i < characters->size(); i++) {
+            Character *character = characters->at(i);
+            if (!character->getCurveVertices()->isEmpty()) {
+                for (int j = 0; j < character->getCurveVertices()->size(); j++) {
+                    if (j % 2 == 0) {
+                        time_vertices->append(character->getCurveVertices()->at(j));
+                    }
+                    else {
+                        y_pos_vertices->append(character->getCurveVertices()->at(j));
+                    }
+                }
             }
-            else {
-                y_pos_vertices->append(character->getCurveVertices()->at(j));
+            if (!character->getStraightVertices()->isEmpty()) {
+                for (int j = 0; j < character->getStraightVertices()->size(); j++) {
+                    if (j % 2 == 0) {
+                        time_vertices->append(character->getStraightVertices()->at(j));
+                    }
+                    else {
+                        y_pos_vertices->append(character->getStraightVertices()->at(j));
+                    }
+                }
             }
         }
-        for (int j = 0; j < character->getStraightVertices()->size(); j++) {
-            if (j % 2 == 0) {
-                time_vertices->append(character->getStraightVertices()->at(j));
-            }
-            else {
-                y_pos_vertices->append(character->getStraightVertices()->at(j));
-            }
+
+        QList<float> *sorted_time_vertices = time_vertices;
+        QList<float> *sorted_y_pos_vertices = y_pos_vertices;
+        if (!sorted_time_vertices->isEmpty() && !sorted_y_pos_vertices->isEmpty())
+        {
+            qSort(sorted_time_vertices->begin(), sorted_time_vertices->end());
+            qSort(sorted_y_pos_vertices->begin(), sorted_y_pos_vertices->end());
+            bottom_in_height = sorted_y_pos_vertices->first();
+            top_in_height = sorted_y_pos_vertices->last();
+            left_in_width = sorted_time_vertices->first();
+            right_in_width = sorted_time_vertices->last();
+            qDebug() << "painted in this window, left: " << left_in_width-0.01 << "right: "<< right_in_width+0.01 << "bottom: " << bottom_in_height*2 << "top: " << top_in_height*2;
         }
     }
-    QList<float> *sorted_time_vertices = time_vertices;
-    QList<float> *sorted_y_pos_vertices = y_pos_vertices;
-    qSort(sorted_time_vertices->begin(), sorted_time_vertices->end());
-    qSort(sorted_y_pos_vertices->begin(), sorted_y_pos_vertices->end());
-    bottom_in_height = sorted_y_pos_vertices->first();
-    top_in_height = sorted_y_pos_vertices->last();
-    left_in_width = sorted_time_vertices->first();
-    right_in_width = sorted_time_vertices->last();
 }
-
 void myGLWidget::set_width_per_time(float _width_per_time) {
     width_per_time = _width_per_time;
 }
@@ -168,29 +212,43 @@ void myGLWidget::initializeGL()
 {
     set_width_per_time(0.1);
     set_height_per_time(0.1);
-    characters = new QList<Character*>();
 
-    glClearColor(1.f, 1.f, 1.f, 0.f);
+    characters = new QList<Character*>();
+    qglClearColor(QColor(255, 255, 255, 255));
     glDisable(GL_DEPTH_TEST);
     glClearDepth(1.0f);
+    glDisable(GL_TEXTURE_2D);
 }
 
 void myGLWidget::paintGL()
 {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glMatrixMode (GL_PROJECTION);
+    glLoadIdentity ();
+    gluOrtho2D (left_in_width-0.01, right_in_width+0.01, bottom_in_height*2, top_in_height*2);
 
-    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-    glLoadIdentity();
-    gluOrtho2D (left_in_width, right_in_width, bottom_in_height*2, top_in_height*2);
-    qDebug() << left_in_width << right_in_width << bottom_in_height*2 << top_in_height*2;
     glLineWidth(2);
-
     glEnable (GL_LINE_SMOOTH);
     glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    if (characters != NULL) {
     for (int i = 0; i < characters->size(); i++) {
+
         Character *character = characters->at(i);
+        if (character != NULL) {
         glColor3f(character->getColor()->at(0), character->getColor()->at(1), character->getColor()->at(2));
+
+        glRasterPos2f(character->getVertices()->at(0)+0.09, character->getVertices()->at(1));
+
+        char *s = character->getName().toUtf8().data();
+
+        if (s && strlen(s)) {
+              while (*s) {
+                 glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, *s);
+                 s++;
+              }
+         }
 
         glBegin(GL_LINES);
 
@@ -200,23 +258,31 @@ void myGLWidget::paintGL()
             glVertex2f(character->getCurveVertices()->at(a+2), character->getCurveVertices()->at(a+3));
         }
         glEnd();
+
         glBegin(GL_LINES);
-        for (int a = 0; a < character->getStraightVertices()->size()-3; a+=4)
+        for (int a = 0; a < character->getStraightVertices()->size()-3; a+=2)
         {
-            glVertex2f(character->getStraightVertices()->at(a), character->getStraightVertices()->at(a+1));
-            glVertex2f(character->getStraightVertices()->at(a+2), character->getStraightVertices()->at(a+3));
+            if (character->getStraightVertices()->at(a+1) == character->getStraightVertices()->at(a+3))
+            {
+                glVertex2f(character->getStraightVertices()->at(a), character->getStraightVertices()->at(a+1));
+                glVertex2f(character->getStraightVertices()->at(a+2), character->getStraightVertices()->at(a+3));
+            }
         }
         glEnd();
+        glFlush();
+        }
+    }
     }
 }
 void myGLWidget::resizeGL(int width, int height)
 {
-    int side = qMin(width, height);
-    glViewport(((width - side)/2), ((height -side)/2), side, side);
+    glViewport(0, 0, width, height);
     glMatrixMode (GL_PROJECTION);
     glLoadIdentity ();
-    gluOrtho2D (left_in_width, right_in_width, bottom_in_height*2, top_in_height*2);
+
+    gluOrtho2D (left_in_width-0.01, right_in_width+0.01, bottom_in_height*2, top_in_height*2);
     glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity ();
 }
 //void myGLWidget::mousePressEvent(QMouseEvent *event)
 //{

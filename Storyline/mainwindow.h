@@ -9,7 +9,7 @@
 #include <qdebug.h>
 #include "interactionsessioncontainer.h"
 #include "interactionsession.h"
-
+#include <QTimer>
 
 
 namespace Ui {

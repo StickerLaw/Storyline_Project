@@ -2,12 +2,14 @@
 #define MYGLWIDGET_H
 #include <character.h>
 #include <QtOpenGL/QGLWidget>
+#include <GLUT/glut.h>
 #include <OpenGL/glu.h>
 #include <OpenGL/gl.h>
 #include <QFile>
 #include <QHash>
 #include <QDebug>
-
+#include <cfloat>
+#include "interactionsession.h"
 #define MAXIMUM INT_MAX
 #define MINIMUM INT_MIN
 class myGLWidget : public QGLWidget
@@ -34,11 +36,14 @@ protected:
 private:
     int _canvas_width, _canvas_height;
     QHash<QString, QHash<int, int>* >* layout;
+    QHash<QString, QHash<int, int>* >* prev_layout;
     float width_per_time, height_per_time;
     int number_of_vertices, number_of_curve_vertices, number_of_straight_vertices;
     QList<GLfloat> *vertice_array, *curve_vertice_array, *color_array, *timesteps;
     QList<GLfloat> *temp_vertices, *temp_vertices_color, *temp_curve_vertices;
     QList<Character*> *characters;
+    QList<Character*> *prev_characters;
+    QList<Character*> *current_characters;
     float line_width;
     float bottom_in_height;
     float top_in_height;
@@ -46,8 +51,6 @@ private:
     float right_in_width;
     float scale;
     QPoint anchor;
-    //int time_step_per_day;
-
 };
 
 #endif // MYGLWIDGET_H

@@ -10,8 +10,6 @@ QT       += core gui opengl
 
 TARGET = Storylines
 TEMPLATE = app
-INCLUDEPATH += /Users/yeseulpark/Storylines/boost_1_52_0
-LIBS += -L/Users/yeseulpark/Storylines/boost_1_52_0/libs
 
 SOURCES += main.cpp\
         mainwindow.cpp \
@@ -40,49 +38,5 @@ HEADERS  += mainwindow.h \
 
 FORMS    += mainwindow.ui
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+mac: LIBS += -framework GLUT
+else:unix|win32: LIBS += -lGLUT
