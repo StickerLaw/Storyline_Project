@@ -2,6 +2,7 @@
 #define CHARACTER_H
 #include <QString>
 #include <QList>
+#include <QPair>
 #include <qHash>
 class Character
 {
@@ -11,10 +12,14 @@ public:
     void addStraightVertex(float vertex);
     void addCurveVertex(float vertex);
     void addTimestep(int timestep);
+    void addStraightLine(QPair<QPair<float, float>*, QPair<float, float>*> *vertex_pair);
+    void addCurveLine(QPair<QPair<float, float>*, QPair<float, float>*> *vertex_pair);
     QList<float> *getVertices();
     QList<float> *getStraightVertices();
     QList<float> *getCurveVertices();
     QList<int> *getTimesteps();
+    QList<QPair<QPair<float, float>*, QPair<float, float>*> *> *getStraightLines();
+    QList<QPair<QPair<float, float>*, QPair<float, float>*> *> *getCurveLines();
     void setID(int id);
     void setName(QString name);
     int getID();
@@ -30,6 +35,8 @@ private:
     QList<float> *curve_vertices;
     QList<float> *straight_vertices;
     QList<int> *timesteps;
+    QList<QPair<QPair<float, float>*, QPair<float, float>*> *> *straight_lines;
+    QList<QPair<QPair<float, float>*, QPair<float, float>*> *> *curve_lines;
     QList<float> *color;
     float red, green, blue;
 };

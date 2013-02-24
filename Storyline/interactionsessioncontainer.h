@@ -8,30 +8,43 @@ public:
     InteractionSessionContainer();
     void createCompareList_prev();
     void createCompareList_now();
-    void InitializeLayout();
     void add(InteractionSession *_is);
     void update(InteractionSession *_is, int prev_time, int time);
     void addTemp(InteractionSession *_nis);
-    InteractionSession* find(QString _str);
+    void setPrevISList(QList<InteractionSession*> *now_isList);
+//    InteractionSession* find(QString _str);
     QList<InteractionSession*>* getISList();
     QList<InteractionSession*>* getTempISList_now();
     QList<InteractionSession*>* getTempISList_prev();
-    void clear();
-    void setPrevISList(QList<InteractionSession*> *now_isList);
-    int prev_time_step, current_time_step;
+
+    bool open;
+
     void initializeClassifiedInteractionSessions();
     void addClassifiedInteractionSession(InteractionSession* interaction_session, QString flag);
     QList<QPair<InteractionSession*, QString> *> *getClassifiedInteractionSessions();
-    void setSlotAssignedInteractionSesesions(QList<QPair<InteractionSession*, int>*> *now_slot_assigned_interaction_sessions);
-    QList<QPair<InteractionSession*, int>*> *getInteractionSessionsWithSlot();
-    bool open;
+
+
+    void setISList_prevLayout(QList<QPair<InteractionSession*, int>*> *isList_currentLayout);
+    QList<QPair<InteractionSession*, int>*> *getISList_prevLayout();        
+    void initializeISList_prevLayout();
+
+    void setCurrentInteractionSessions(QList<QPair<InteractionSession*, int> *> *_all_ISs_updated_with_new_ISs);
+    QList<QPair<InteractionSession*, int>*> *getCurrentInteractionSessions();
+
+    void setExtendingISsToPrevISs(QList<QPair<InteractionSession*, int> *> *_extendingISsWithPrevISs);
+    QList<QPair<InteractionSession*, int> *> *getExtendingISsWithPrevISs();
+
+    void clear();
 
 private:
     QList<InteractionSession*> *isList;
     QList<InteractionSession*> *prev_isList;
     QList<InteractionSession*> *now_isList;
+    QList<QPair<InteractionSession*, int> *> *extendingISsWithPrevISs;
+    QList<QPair<InteractionSession*, int> *> *all_ISs_updated_with_new_ISs;
+    QList<QPair<InteractionSession*, int>*> *isList_prevLayout;
     QList<QPair<InteractionSession*, QString> *> *classified_interaction_sessions;
-    QList<QPair<InteractionSession*, int> *> *slot_assigned_interaction_sessions;
+
 };
 
 #endif // INTERACTIONSESSIONCONTAINER_H

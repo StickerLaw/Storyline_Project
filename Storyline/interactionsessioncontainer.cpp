@@ -3,7 +3,7 @@
 InteractionSessionContainer::InteractionSessionContainer()
 {
     isList = new QList<InteractionSession*>();
-    slot_assigned_interaction_sessions = new QList<QPair<InteractionSession*, int> *> ();
+
 }
 void InteractionSessionContainer::createCompareList_prev()
 {
@@ -14,6 +14,39 @@ void InteractionSessionContainer::createCompareList_now()
 {
     now_isList = new QList<InteractionSession*>();
 }
+
+void InteractionSessionContainer::initializeISList_prevLayout()
+{
+    isList_prevLayout = new QList<QPair<InteractionSession*, int>*>();
+}
+void InteractionSessionContainer::setISList_prevLayout(QList<QPair<InteractionSession*, int>*> *isList_currentLayout)
+{
+    isList_prevLayout = isList_currentLayout;
+}
+
+QList<QPair<InteractionSession*, int>*> *InteractionSessionContainer::getISList_prevLayout()
+{
+    return isList_prevLayout;
+}
+void InteractionSessionContainer::setExtendingISsToPrevISs(QList<QPair<InteractionSession*, int> *> *_extendingISsWithPrevISs)
+{
+    extendingISsWithPrevISs = _extendingISsWithPrevISs;
+}
+
+QList<QPair<InteractionSession*, int> *> *InteractionSessionContainer::getExtendingISsWithPrevISs()
+{
+    return extendingISsWithPrevISs;
+}
+
+void InteractionSessionContainer::setCurrentInteractionSessions(QList<QPair<InteractionSession*, int> *> *_all_ISs_updated_with_new_ISs)
+{
+    all_ISs_updated_with_new_ISs = _all_ISs_updated_with_new_ISs;
+}
+QList<QPair<InteractionSession*, int>*> *InteractionSessionContainer::getCurrentInteractionSessions()
+{
+    return all_ISs_updated_with_new_ISs;
+}
+
 void InteractionSessionContainer::initializeClassifiedInteractionSessions()
 {
     classified_interaction_sessions = new QList<QPair<InteractionSession*, QString> *> ();
@@ -31,15 +64,6 @@ QList<QPair<InteractionSession*, QString> *> *InteractionSessionContainer::getCl
     return classified_interaction_sessions;
 }
 
-void InteractionSessionContainer::setSlotAssignedInteractionSesesions(QList<QPair<InteractionSession*, int>*> *_slot_assigned_interaction_sessions)
-{
-    slot_assigned_interaction_sessions = _slot_assigned_interaction_sessions;
-}
-
-QList<QPair<InteractionSession*, int>*> *InteractionSessionContainer::getInteractionSessionsWithSlot()
-{
-    return slot_assigned_interaction_sessions;
-}
 void InteractionSessionContainer::add(InteractionSession *_is)
 {
     isList->append(_is);
@@ -48,7 +72,6 @@ void InteractionSessionContainer::addTemp(InteractionSession *_nis)
 {
     now_isList->append(_nis);
 }
-
 void InteractionSessionContainer::update(InteractionSession *_is, int prev_time, int time)
 {
     QList<InteractionSession*>::iterator it = isList->begin();
@@ -86,6 +109,25 @@ void InteractionSessionContainer::clear()
     prev_isList->clear();
     now_isList->clear();
 }
+
+//InteractionSession* InteractionSessionContainer::find(QString _str)
+//{
+//    if (isList->isEmpty()) qDebug() << "nothing in the interaction session container yet";
+//    if (prev_isList->isEmpty()) qDebug() << "no interaction sessions for the previous time";
+//    else {
+//        for (int j = 0; j < prev_isList->size(); j++)
+//        {
+//            if (prev_isList->at(j)->getMembersOneStr().compare(_str) == 0)
+//            {
+//                InteractionSession* existing_is = prev_isList->at(j);
+//                return existing_is;
+//            }
+//            else return NULL;
+//        }
+//    }
+//    return NULL;
+//}
+
 QList<InteractionSession*>* InteractionSessionContainer::getISList()
 {
     return isList;

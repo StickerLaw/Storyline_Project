@@ -58,16 +58,22 @@ void myGLWidget::takeLayout(QHash<QString, QHash<int, int>* >* _layout) {
     int member_count = 0;
     characters = new QList<Character*>();
 
+    /*Extract each member's line path*/
     for (; it != layout->end(); it++) {
+        /*Extract the character information*/
         Character* character = new Character();
         QString member = it.key();
         character->setID(member_count);
         character->setName(member);
+        /*Initialize the path*/
         GLfloat prev_y_pos = FLT_MAX;
         int prev_timestep = 0;
+
+
         QHash<int, int>* timesteps_and_positions = it.value();
         QList<int> sorted_times = timesteps_and_positions->keys();
         qSort(sorted_times.begin(), sorted_times.end());
+
 
         int time_count = 0;
         int timestep = 0;
@@ -75,8 +81,10 @@ void myGLWidget::takeLayout(QHash<QString, QHash<int, int>* >* _layout) {
         {
             timestep = sorted_times.at(i);
             GLfloat y_pos = static_cast< float >(timesteps_and_positions->value(timestep));
+            qDebug() << "path of " << member << ":" << i << timestep << ", " << y_pos;
             character->addVertex((float)(timestep)*width_per_time);
             character->addVertex((float)y_pos*height_per_time);
+
             if (timestep == 0) {
                 character->addTimestep(timestep);
                 character->addTimestep(timestep);
@@ -86,7 +94,17 @@ void myGLWidget::takeLayout(QHash<QString, QHash<int, int>* >* _layout) {
                 if (abs(prev_timestep - timestep) == 1 ) {
 
                     if (prev_y_pos == y_pos) {
-
+                        /*Create a pair of a pair of vertices*/
+                        QPair<QPair<float, float>*, QPair<float, float>*> *vertex_pair = new QPair<QPair<float, float>*, QPair<float, float>*>();
+                        QPair<float, float> *vertex1 = new QPair<float, float>();
+                        vertex1->first = (float)(timestep)*width_per_time;
+                        vertex1->second = (float)y_pos*height_per_time;
+                        QPair<float, float> *vertex2 = new QPair<float, float>();
+                        vertex2->first = (float)(timestep+1)*width_per_time;
+                        vertex2->second = (float)y_pos*height_per_time;
+                        vertex_pair->first = vertex1;
+                        vertex_pair->second = vertex2;
+                        character->addStraightLine(vertex_pair);
                         character->addStraightVertex((float)(timestep)*width_per_time);
                         character->addStraightVertex((float)y_pos*height_per_time);
                         character->addTimestep(timestep);
@@ -227,52 +245,71 @@ void myGLWidget::paintGL()
     glLoadIdentity ();
     gluOrtho2D (left_in_width-0.01, right_in_width+0.01, bottom_in_height*2, top_in_height*2);
 
-    glLineWidth(2);
+
     glEnable (GL_LINE_SMOOTH);
     glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     if (characters != NULL) {
-    for (int i = 0; i < characters->size(); i++) {
+        for (int i = 0; i < characters->size(); i++) {
 
-        Character *character = characters->at(i);
-        if (character != NULL) {
-        glColor3f(character->getColor()->at(0), character->getColor()->at(1), character->getColor()->at(2));
+            Character *character = characters->at(i);
+            if (character != NULL) {
+                glColor3f(character->getColor()->at(0), character->getColor()->at(1), character->getColor()->at(2));
 
-        glRasterPos2f(character->getVertices()->at(0)+0.09, character->getVertices()->at(1));
+                glRasterPos2f(character->getVertices()->at(0)+0.09, character->getVertices()->at(1));
 
-        char *s = character->getName().toUtf8().data();
+                char *s = character->getName().toUtf8().data();
 
-        if (s && strlen(s)) {
-              while (*s) {
-                 glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, *s);
-                 s++;
-              }
-         }
+                if (s && strlen(s)) {
+                      while (*s) {
+                         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, *s);
+                         s++;
+                      }
+                 }
+                glLineWidth(3);
+                glBegin(GL_LINES);
 
-        glBegin(GL_LINES);
+                for (int a = 0; a < character->getCurveVertices()->size() - 3; a+=4)
+                {
+                    glVertex2f(character->getCurveVertices()->at(a), character->getCurveVertices()->at(a+1));
+                    glVertex2f(character->getCurveVertices()->at(a+2), character->getCurveVertices()->at(a+3));
+                }
+                glEnd();
 
-        for (int a = 0; a < character->getCurveVertices()->size() - 3; a+=4)
-        {
-            glVertex2f(character->getCurveVertices()->at(a), character->getCurveVertices()->at(a+1));
-            glVertex2f(character->getCurveVertices()->at(a+2), character->getCurveVertices()->at(a+3));
-        }
-        glEnd();
-
-        glBegin(GL_LINES);
-        for (int a = 0; a < character->getStraightVertices()->size()-3; a+=2)
-        {
-            if (character->getStraightVertices()->at(a+1) == character->getStraightVertices()->at(a+3))
-            {
-                glVertex2f(character->getStraightVertices()->at(a), character->getStraightVertices()->at(a+1));
-                glVertex2f(character->getStraightVertices()->at(a+2), character->getStraightVertices()->at(a+3));
+                glBegin(GL_LINES);
+                for (int a = 0; a < character->getStraightLines()->size(); a++)
+                {
+                    glVertex2f (character->getStraightLines()->at(a)->first->first, character->getStraightLines()->at(a)->first->second);
+                    //qDebug() << "straight line" << character->getStraightLines()->at(a)->first->first <<character->getStraightLines()->at(a)->first->second << character->getStraightLines()->at(a)->second->first << character->getStraightLines()->at(a)->second->second;
+                    glVertex2f (character->getStraightLines()->at(a)->second->first, character->getStraightLines()->at(a)->second->second);
+                }
+                glEnd();
+    //            glBegin(GL_LINES);
+    //            for (int a = 0; a < character->getStraightVertices()->size()-3; a+=2)
+    //            {
+    //                if (character->getStraightVertices()->at(a+1) == character->getStraightVertices()->at(a+3))
+    //                {
+    //                    glVertex2f(character->getStraightVertices()->at(a), character->getStraightVertices()->at(a+1));
+    //                    glVertex2f(character->getStraightVertices()->at(a+2), character->getStraightVertices()->at(a+3));
+    //                }
+    //            }
+    //            glEnd();
+                //glFlush();
             }
-        }
-        glEnd();
-        glFlush();
+            glLineWidth(1);
+            glBegin(GL_LINES);
+
+            glColor3f(0, 0, 0);
+            for (int a = 0; a < character->getTimesteps()->size(); a++)
+            {
+                glVertex2f((float)(character->getTimesteps()->at(a)*width_per_time), bottom_in_height*2);
+                glVertex2f((float)(character->getTimesteps()->at(a)*width_per_time), top_in_height*2);
+            }
+            glEnd();
         }
     }
-    }
+
 }
 void myGLWidget::resizeGL(int width, int height)
 {

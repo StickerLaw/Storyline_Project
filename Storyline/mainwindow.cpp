@@ -9,7 +9,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->setupUi(this);
 
-    _current_dir = "/Users/yeseulpark/Storyline_Project/Storyline/Data";
+    _current_dir = "/Users/yeseulpark/Storyline_Project_Greedy copy/Storyline/Data/";
 
     QAction *a;
     QMenu *m = ui->menuFile;
@@ -62,6 +62,8 @@ void MainWindow::stream_data()
     int location = -1;
     int prev_time = 0;
     iscontainer->createCompareList_prev();
+    /*initialize previous slot assigned */
+    iscontainer->initializeISList_prevLayout();
     iscontainer->open = true;
     while(!file_input.atEnd()) {
         line = file_input.readLine();
@@ -116,7 +118,6 @@ void MainWindow::stream_data()
                 }
 
             }
-
         }
 
         /*Set the interaction sessions of the current timeslot*/
@@ -159,12 +160,14 @@ void MainWindow::stream_data()
             is->printIS();
         }
 
-        initializeConnections(iscontainer->getISList());
+        /*Initialize connections of ISs*/
+        initConnections(iscontainer->getISList());
         /*Set following interaction sessions and proceeding interaction sessions*/
         registerConnections(iscontainer->getISList());
-
         /*Compute the layout with the current interaction sessions*/
         layout = computeLayout(iscontainer);
+
+
 
 //        /*For current ISs classified*/
 //        if (!iscontainer->getClassifiedInteractionSessions()->isEmpty()) {
@@ -216,7 +219,7 @@ void MainWindow::stream_data()
 
             /*Render the layout with OpenGL*/
             if (!layout->isEmpty()) {
-                sleep(1);
+                //sleep(1);
                 ui->widget->takeLayout(layout);
                 ui->widget->visualize();
             }

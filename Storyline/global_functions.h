@@ -12,6 +12,7 @@
 #include <QFile>
 #include <QVariant>
 #include <QHash>
+#include <limits.h>
 #include <QTime>
 #include <QVector>
 #include <QSet>
@@ -19,10 +20,8 @@
 #include <cmath>
 #include <qdebug.h>
 
-//#include <boost/algorithm/string.hpp>
-#include <limits.h>
-#define SLOTS 13
-#define OFFSET 4
+#define SLOTS 9
+#define OFFSET 10
 #define OBJECTIVE_SLOPE 1.5
 #define POPULATION 1000
 #define FINAL_GENERATION 10
@@ -52,26 +51,29 @@ SlotSegments* generateSlotSegments(SlotBaseLayout *slot_base_layout);
 void adjustSlotSegments(SlotSegments *slot_segments, QList<SlotLayout*>* slot_layouts, int timesteps);
 void removeWhiteSpace(SlotBaseLayout* slot_base_layout, QList<SlotLayout*>* slot_layouts, int time_steps);
 void relaxLines(QHash<QString, QHash<int, int> *> *y_coords, QList<InteractionSession*>* interaction_sessions);
-int evaluateLayout(QHash<QString, QHash<int, int> *> *layout, int time_steps);
+float evaluateLayout(QHash<QString, QHash<int, int> *> *layout, int time_steps);
 //QHash<QString, QHash<int, int>* >* generateLayout(QList<int>* genome, InteractionSessionContainer *is_container);
 //QPair<QHash<QString, QHash<int, int>* >*, int> *evaluateGenomes(QList<QList<int> *> *genome_pool, InteractionSessionContainer *is_container, QHash<int, int> *fittness_cache, int best_fittness, QHash<QString, QHash<int, int>* >*best_layout);
 //QList<QList<int>*> *getEliteGenomes(QList<QList<int> *> *genome_pool, QHash<int, int> *fittness_cache);
 //QList<QList<int>*> *renewGenomes(QList<QList<int> *> *genome_pool, QHash<int, int> *fittness_cache);
 QHash<QString, QHash<int, int>* >* computeLayout(InteractionSessionContainer *is_container);
-void initializeConnections(QList<InteractionSession*> *interaction_sessions);
+void initConnections(QList<InteractionSession*> *interaction_sessions);
 void registerConnections(QList<InteractionSession*> *interaction_sessions);
+//void registerConnections(QList<QPair<InteractionSession*, int>*> *slot_assigned_interaction_sessions);
 void outputLayout(QString, QHash<QString, QHash<int, int>* > *layout, InteractionSessionContainer *is_container);
 void loadInteractionSessions(QString, InteractionSessionContainer* iscontainer);
 void loadData(QString fileName, InteractionSessionContainer *iscontainer);
-bool fittnessLessThen2(QPair<QHash<QString, QHash<int, int>*>*, int>* i1, QPair<QHash<QString, QHash<int, int>*>*, int>* i2);
-void permutation_oneCombination(QList<QPair<QHash<QString, QHash<int, int>*>*, int>*> *current_layout_fittness_list, QList<int> *original_combination, QList<int> *permutation_after_combination, InteractionSessionContainer *is_container, QList<InteractionSession*> *current_new_interaction_sessions);
-void loop_assign_and_generate_and_evaluate(QList<QPair<QHash<QString, QHash<int, int>*>*, int> *> *current_layout_fittness_list, InteractionSessionContainer *is_container, QList<InteractionSession*> *current_new_interaction_sessions, QList<int> *permutation_after_combination);
+bool fittnessLessThen2(QPair<QHash<QString, QHash<int, int>*>*, float>* i1, QPair<QHash<QString, QHash<int, int>*>*, float>* i2);
+bool fittnessLessThen3(QPair<QList<QPair<InteractionSession*, int> *> *, float> *i1, QPair<QList<QPair<InteractionSession*, int> *> *, float> *i2);
+void permutation_oneCombination(QList<QPair<QHash<QString, QHash<int, int>*>*, float>*> *current_layout_fittness_list, QList<int> *original_combination, QList<int> *permutation_after_combination, InteractionSessionContainer *is_container, QList<InteractionSession*> *current_new_interaction_sessions);
 QList<int> *randomGenerateSlots(int max_slot_number, int slotList_length);
-QList<int> *random_openedSlots(int slotList_length, QList<int> *openedSlotList);
+//QList<int> *random_openedSlots(int slotList_length, QList<int> *openedSlotList);
 QList<QPair<InteractionSession*, QString> *> *classifyInteractionSessions(InteractionSessionContainer *is_container);
-void combination_openedSlots(QList<QPair<QHash<QString, QHash<int, int>*>*, int> *> *current_layout_fittness_list, InteractionSessionContainer *is_container, QList<InteractionSession*> *current_new_interaction_sessions, QList<QList<int>*> *combinationList, QList<int> *combination_openedSlotList, QList<int> *openedSlotList, int k, int offset);
-void assignSlotsToExtendingISs(InteractionSessionContainer *is_container, QList<QPair<InteractionSession*, QString> *> *classified_interaction_sessions, QList<InteractionSession*> *current_new_interaction_sessions, QList<int> *openedSlotList);
-void assignSlotsToNewISs(InteractionSessionContainer *is_container, QList<InteractionSession*> *current_new_interaction_sessions, QList<int>* combination_openedSlotList);
+void tryLayout(QList<QPair<QList<QPair<InteractionSession*, int> *> *, float> *> *current_layout_candidate_ISList, QList<QPair<QHash<QString, QHash<int, int>*>*, float> *> *current_layout_fittness_list, InteractionSessionContainer *is_container, QList<InteractionSession*> *current_new_interaction_sessions, QList<int>* permutation_after_combination);
+QList<int> *getOpenSlotList(QList<QPair<InteractionSession*, int> *> *temp_copy_ISs, InteractionSessionContainer *is_container, QList<QPair<InteractionSession*, QString> *> *classified_interaction_sessions, QList<InteractionSession*> *current_new_interaction_sessions);
+void assignSlotsToExtendingISs(QList<QPair<InteractionSession*, int> *> *temp_copy_ISs, InteractionSessionContainer *is_container, QList<QPair<InteractionSession*, QString> *> *classified_interaction_sessions, QList<InteractionSession*> *current_new_interaction_sessions, QList<int> *openedSlotList);
+void assignSlotsToNewISs(InteractionSessionContainer *is_container, QList<InteractionSession*> *current_new_interaction_sessions, QList<int>* permutation_after_combination);
+void combinationLayout(QList<QPair<QList<QPair<InteractionSession*, int> *> *, float> *> *currentISsList, QList<QPair<QHash<QString, QHash<int, int>*>*, float> *> *current_layout_fittness_list, InteractionSessionContainer *is_container, QList<InteractionSession*> *current_new_interaction_sessions, QList<int> *combination, QList<int> *openedSlotList, int k, int offset);
 QHash<QString, QHash<int, int>* >* generateCurrentLayout(InteractionSessionContainer *is_container);
 
 #endif // GLOBAL_FUNCTIONS_H

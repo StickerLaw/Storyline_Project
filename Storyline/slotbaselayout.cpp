@@ -6,7 +6,7 @@ SlotBaseLayout::SlotBaseLayout(int slot_count)
     /*Initialize the list of the list of the slot*/
     for (int i = 0; i < slot_count; i++) {
         Slot = new QList<InteractionSession*>();
-        Slots->insert(-1, Slot);
+        Slots->insert(INT_MAX, Slot);
     }
     /*Key: InteractionSession, Value: SessionLayout*/
     sessions_layout = new QHash<InteractionSession*, SessionLayout*>();
@@ -26,7 +26,6 @@ bool SlotBaseLayout::setInteractionSessionToSlot(InteractionSession *interaction
 
     if (_availability)
     {
-        //qDebug() << "in?";
         Slot = Slots->at(slot_number);
         if (Slot == NULL) {
             Slot = new QList<InteractionSession*>();
@@ -40,7 +39,7 @@ bool SlotBaseLayout::setInteractionSessionToSlot(InteractionSession *interaction
 
         SessionLayout* session_layout = new SessionLayout(slot_number, interaction_session);
         sessions_layout->insert(interaction_session, session_layout);
-        qDebug() << "Setting IS to Slot: " << interaction_session->getMembersOneStr() << slot_number;
+        //qDebug() << "Set IS to Slot: " << interaction_session->getMembersOneStr() << slot_number;
 
     }
     return _availability;
@@ -49,21 +48,16 @@ bool SlotBaseLayout::checkAvailability(InteractionSession *interaction_session, 
 {
     QList<InteractionSession*> *registered_interaction_sessions = Slots->at(slot_number);
     _availability = true;
-//    for (int i = 0; i < registered_interaction_sessions->size(); i++)
-//    {
-//        qDebug() << registered_interaction_sessions->at(i)->getMembersOneStr();
-//    }
+
     for (int i = 0; i < registered_interaction_sessions->size(); i++)
     {
         InteractionSession *registered_interaction_session = registered_interaction_sessions->at(i);
 
         if (interaction_session->getStartTime() >= registered_interaction_session->getEndTime() || interaction_session->getEndTime() <= registered_interaction_session->getStartTime()) {
-            //qDebug() << interaction_session->getStartTime() << registered_interaction_session->getEndTime() << interaction_session->getEndTime() << registered_interaction_session->getStartTime();
             _availability = true;
 
         }
         else {
-            //qDebug() << interaction_session->getStartTime() << registered_interaction_session->getEndTime() << interaction_session->getEndTime() << registered_interaction_session->getStartTime();
             _availability = false;
             break;
         }

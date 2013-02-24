@@ -7,6 +7,8 @@ Character::Character()
     straight_vertices = new QList<float>();
     curve_vertices = new QList<float>();
     timesteps = new QList<int>();
+    straight_lines = new QList<QPair<QPair<float, float>*, QPair<float, float>*> *>();
+    curve_lines = new QList<QPair<QPair<float, float>*, QPair<float, float>*> *>();
 }
 void Character::addVertex(float vertex)
 {
@@ -25,6 +27,22 @@ void Character::addCurveVertex(float vertex)
 void Character::addTimestep(int timestep)
 {
     timesteps->append(timestep);
+}
+void Character::addStraightLine(QPair<QPair<float, float> *, QPair<float, float> *> *vertex_pair)
+{
+    straight_lines->append(vertex_pair);
+}
+void Character::addCurveLine(QPair<QPair<float, float> *, QPair<float, float> *> *vertex_pair)
+{
+    curve_lines->append(vertex_pair);
+}
+QList<QPair<QPair<float, float>*, QPair<float, float>*> *> *Character::getStraightLines()
+{
+    return straight_lines;
+}
+QList<QPair<QPair<float, float>*, QPair<float, float>*> *> *Character::getCurveLines()
+{
+    return curve_lines;
 }
 QList<int> * Character::getTimesteps()
 {
